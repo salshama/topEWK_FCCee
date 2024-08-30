@@ -1,18 +1,18 @@
 #Mandatory: List of processes
 processList = {
-#             'wzp6_ee_tt_pol_ecm365':{'chunks':50},
-#             'wzp6_ee_Z_tt_leplep_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_Z_tt_tlepThad_pol_ecm365':{'chunks':10,},
-#             'wzp6_ee_Z_tt_thadTlep_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_Z_tt_hadhad_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_gamma_tt_leplep_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_gamma_tt_tlepThad_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_gamma_tt_thadTlep_pol_ecm365':{'chunks':10},
-#             'wzp6_ee_gamma_tt_hadhad_pol_ecm365':{'chunks':10}
-#             'wzp6_ee_SM_tt_leplep_pol_ecm365':{'chunks':50},
-#             'wzp6_ee_SM_tt_tlepThad_pol_ecm365':{'chunks':50},
-#             'wzp6_ee_SM_tt_thadTlep_pol_ecm365':{'chunks':50},
-             'wzp6_ee_SM_tt_hadhad_pol_ecm365':{'chunks':50}
+            'wzp6_ee_tt_pol_ecm365':{'chunks':50},
+            'wzp6_ee_Z_tt_leplep_pol_ecm365':{'chunks':10},
+            'wzp6_ee_Z_tt_tlepThad_pol_ecm365':{'chunks':10,},
+            'wzp6_ee_Z_tt_thadTlep_pol_ecm365':{'chunks':10},
+            'wzp6_ee_Z_tt_hadhad_pol_ecm365':{'chunks':10},
+            'wzp6_ee_gamma_tt_leplep_pol_ecm365':{'chunks':10},
+            'wzp6_ee_gamma_tt_tlepThad_pol_ecm365':{'chunks':10},
+            'wzp6_ee_gamma_tt_thadTlep_pol_ecm365':{'chunks':10},
+            'wzp6_ee_gamma_tt_hadhad_pol_ecm365':{'chunks':10},
+            'wzp6_ee_SM_tt_leplep_pol_ecm365':{'chunks':50},
+            'wzp6_ee_SM_tt_tlepThad_pol_ecm365':{'chunks':50},
+            'wzp6_ee_SM_tt_thadTlep_pol_ecm365':{'chunks':50},
+            'wzp6_ee_SM_tt_hadhad_pol_ecm365':{'chunks':50},
 
             }
 
@@ -25,12 +25,15 @@ outputDir   = "outputs/FCCee/top/hadronic/analysis_stage1/"
 #EOS output directory for batch jobs
 outputDirEos = "/eos/experiment/fcc/ee/analyses/case-studies/top/topEWK/flatNtuples/winter2023"
 
+#Additional/custom C++ functions
+includePaths = ["functions.h"]
+
 
 #Optional
 nCPUS       = 8
 runBatch    = True
-batchQueue = "workday"
-compGroup = "group_u_FCC.local_gen"
+batchQueue  = "workday"
+compGroup   = "group_u_FCC.local_gen"
 
 #Mandatory: RDFanalysis class where the use defines the operations on the TTree
 class RDFanalysis():
@@ -80,6 +83,12 @@ class RDFanalysis():
                .Define("genElectron_mass",      "FCCAnalyses::MCParticle::get_mass(genElectron)")
                .Define("genElectron_charge",    "FCCAnalyses::MCParticle::get_charge(genElectron)")
                .Define("genElectron_parentPDG", "FCCAnalyses::MCParticle::get_leptons_origin(genElectron,Particle,Particle0)") 
+               
+               .Define("missingEnergy", "FCCAnalyses::ZHfunctions::missingEnergy(365., ReconstructedParticles)")
+               .Define("recoEmiss_px",  "missingEnergy[0].momentum.x")
+               .Define("recoEmiss_py",  "missingEnergy[0].momentum.y")
+               .Define("recoEmiss_pz",  "missingEnergy[0].momentum.z")
+               .Define("recoEmiss_e",   "missingEnergy[0].energy")
 
                .Alias("Muon0",      "Muon#0.index")
                .Alias("Electron0",  "Electron#0.index")
@@ -134,15 +143,17 @@ class RDFanalysis():
     #Mandatory: output function, please make sure you return the branchlist as a python list
     def output():
         branchList = [
-                 "n_genTops", "n_genWs", "n_genMuons", "n_genElectrons", 
-                 "genTop_px", "genTop_py", "genTop_pz", "genTop_energy", "genTop_mass", "genTop_charge",
-                 "genW_px", "genW_py", "genW_pz", "genW_energy", "genW_mass", "genW_charge",
-                 "genMuon_px", "genMuon_py", "genMuon_pz", "genMuon_energy", "genMuon_mass", "genMuon_charge", "genMuon_parentPDG",
-                 "genElectron_px", "genElectron_py", "genElectron_pz", "genElectron_energy", "genElectron_mass", "genElectron_charge", "genElectron_parentPDG",
-                 "n_muons", "n_electrons", "n_photons", "n_jets",
-                 "muon_px", "muon_py", "muon_pz", "muon_energy", "muon_mass", "muon_charge",
-                 "electron_px", "electron_py", "electron_pz", "electron_energy", "electron_mass", "electron_charge",
-                 "photon_px", "photon_py", "photon_pz", "photon_energy", "photon_mass", "photon_charge",
-                 "jet_px", "jet_py", "jet_pz", "jet_energy", "jet_mass", "jet_charge", "jet_btag"
+                 "n_genTops", "n_genWs", "n_genMuons", "n_genElectrons","genTop_px", "genTop_py",
+                 "genTop_pz", "genTop_energy", "genTop_mass", "genTop_charge", "genW_px", "genW_py",
+                 "genW_pz", "genW_energy", "genW_mass", "genW_charge", "genMuon_px", "genMuon_py",
+                 "genMuon_pz", "genMuon_energy", "genMuon_mass", "genMuon_charge", "genMuon_parentPDG",
+                 "genElectron_px", "genElectron_py","genElectron_pz", "genElectron_energy",
+                 "genElectron_mass", "genElectron_charge", "genElectron_parentPDG", "n_muons", "n_electrons",
+                 "n_photons", "n_jets","muon_px", "muon_py", "muon_pz", "muon_energy", "muon_mass",
+                 "muon_charge", "electron_px", "electron_py", "electron_pz", "electron_energy",
+                 "electron_mass", "electron_charge","photon_px", "photon_py", "photon_pz", "photon_energy",
+                 "photon_mass", "photon_charge","jet_px", "jet_py", "jet_pz", "jet_energy", "jet_mass",
+                 "jet_charge", "jet_btag", "Emiss_energy", "Emiss_p", "Emiss_px", "Emiss_py", "Emiss_pz",
+                 "Emiss_phi", "Emiss_eta"
                 ]
         return branchList
