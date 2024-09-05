@@ -20,10 +20,10 @@ def determine_xlabel(histogram_name):
     # mapping keywords to xlabels
     keyword_to_label = {
         "energy": "Energy [GeV]",
-        "pt": "pT [GeV]",
+        "pt": "p$_T$ [GeV]",
         "mass": "Mass [GeV]",
         "eta": "$\eta$",
-        "phi": "$\phi"
+        "phi": "$\phi$"
     }
     
     # default
@@ -38,7 +38,7 @@ def determine_xlabel(histogram_name):
     
     return xlabel
 
-# reading and drawing histograms
+# plotting histograms
 def read_and_draw_histogram(root_file, histogram_name):
     
     """
@@ -64,7 +64,6 @@ def read_and_draw_histogram(root_file, histogram_name):
             # determining xlabel
             xlabel = determine_xlabel(histogram_name)
             
-            # plot histogram
             plt.figure(figsize=(8, 6))
             plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='step', label=histogram_name)
             plt.xlabel(xlabel)
