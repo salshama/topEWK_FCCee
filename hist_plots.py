@@ -1,114 +1,3 @@
-# # importing required packages
-# import uproot
-# import matplotlib.pyplot as plt
-# import glob
-# import os
-# 
-# # determine xlabel based on histogram name
-# def determine_xlabel(histogram_name):
-# 
-#     """
-#     Determines the appropriate x-axis label based on keywords in the histogram name.
-# 
-#     Parameters:
-#     - histogram_name: str, name of the histogram.
-# 
-#     Returns:
-#     - xlabel: str, the x-axis label.
-#     """
-#     
-#     # mapping keywords to xlabels
-#     keyword_to_label = {
-#         "energy": "Energy [GeV]",
-#         "pt": "p$_T$ [GeV]",
-#         "mass": "Mass [GeV]",
-#         "eta": "$\eta$",
-#         "phi": "$\phi$"
-#     }
-#     
-#     # default
-#     xlabel = "Value"
-#     
-#     # check for keywords in histogram name
-#     for keyword, label in keyword_to_label.items():
-#     
-#         if keyword in histogram_name.lower():
-#             xlabel = label
-#             break
-#     
-#     return xlabel
-# 
-# # plotting histograms
-# def read_and_draw_histogram(root_file, histogram_name):
-#     
-#     """
-#     Reads a histogram from a .root file and draws it using matplotlib.
-# 
-#     Parameters:
-#     - root_file: str, path to the .root file.
-#     - histogram_name: str, name of the histogram to be extracted and plotted.
-#     """
-#     
-#     with uproot.open(root_file) as file:
-#         
-#         # check if the histogram exists
-#         if histogram_name in file:
-#             
-#             # access the histogram
-#             histogram = file[histogram_name]
-#             
-#             # extract histogram data
-#             hist_values = histogram.values()
-#             bin_edges = histogram.axes[0].edges()
-#             
-#             # determining xlabel
-#             xlabel = determine_xlabel(histogram_name)
-#             
-#             plt.figure(figsize=(8, 6))
-#             plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='step', label=histogram_name)
-#             plt.xlabel(xlabel)
-#             plt.ylabel('Events')
-#             plt.title(f'Histogram: {histogram_name} from {root_file}')
-#             plt.legend()
-#             plt.grid(True)
-#             plt.show()
-#             
-#             # create a valid filename for the PDF and save it
-#             output_filename = f"{os.path.splitext(os.path.basename(root_file))[0]}_{histogram_name}.pdf"
-#             plt.savefig("/ceph/salshamaily/topEWK_FCCee/plots/"+output_filename)
-#             
-#             plt.close()
-#             
-#         else:
-#             print(f"Histogram {histogram_name} not found in {root_file}.")
-#     
-# # processing multiple .root files        
-# def process_multiple_files(root_files):
-#     
-#     """
-#     Process multiple root files and draw all histograms found in each.
-# 
-#     Parameters:
-#     - root_files: list of str, paths to the .root files.
-#     """
-#     
-#     for root_file in root_files:
-#         print(f'Processing file: {root_file}')
-#         
-#         with uproot.open(root_file) as file:
-#             # list all objects in file and filter histograms
-#             histogram_names = [key for key in file.keys() if file[key].classname.startswith("TH")]
-#             
-#             for hist_name in histogram_names:
-#                 print(f'  - Drawing histogram: {hist_name}')
-#                 read_and_draw_histogram(root_file, hist_name)
-#                 
-# # glob all .root files
-# root_files = glob.glob('/ceph/salshamaily/topEWK_FCCee/root_hists/*.root')
-# 
-# # process files
-# process_multiple_files(root_files)
-
 # importing required packages
 import uproot
 import matplotlib.pyplot as plt
@@ -157,10 +46,10 @@ def classify_file(file_name):
     - classification: str, either 'signal' or 'background'.
     """
     
-    if "leplep" in file_name.lower() or "hadhad" in file_name.lower():
+    if "tlepTlep" in file_name or "thadThad" in file_name:
         return 'background'
         
-    elif "lephad" or "hadlep" in file_name.lower():
+    elif "tlepThad" in file_name or "thadTlep" in file_name:
         return 'signal'
         
     else:
@@ -179,17 +68,16 @@ def extract_variation(file_name):
     """
     
     base_name = os.path.basename(file_name)
-    parts = base_name.split('_')
+    parts     = base_name.split('_')
 
     # Check if the second-to-last part appears to be a variation
-    if len(parts) > 2 and ('down' in parts[-2] or 'up' in parts[-2]):
-    
-        return parts[-2]  # second-to-last is variation
+    if len(parts) > 2 and ('down' in parts[-4] or 'up' in parts[-4]):
+        return parts[-4]  # second-to-last is variation
         
     else:
-    
         return 'SM'  # no variation "Standard Model"
 
+# reading histograms from .root files
 def read_histogram_data(root_file, histogram_name):
 
     """
@@ -227,28 +115,28 @@ def plot_stacked_histogram(histogram_name, signal_histograms, background_histogr
     - variation: str, the BSM variation being plotted.
     """
     
-    plt.figure(figsize=(8, 6))
-    
-    # Stack background histograms
-    total_background = np.zeros_like(background_histograms[0][1])
-    
-    for bin_edges, hist_values in background_histograms:
-    
-        plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='stepfilled', alpha=0.5, label='Fully hadronic')
-        total_background += hist_values
+    plt.figure(figsize=(8,6))
     
     # stack signal histograms
     total_signal = np.zeros_like(signal_histograms[0][1])
     
     for bin_edges, hist_values in signal_histograms:
-        plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='step', label='Signal', linewidth=2)
+        plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='stepfilled', label='Semi-leptonic', alpha=0.5, linewidth=2)
         total_signal += hist_values
+        
+    # stack background histograms
+    total_background = np.zeros_like(background_histograms[0][1])
+    
+    for bin_edges, hist_values in background_histograms:
+    
+        plt.hist(bin_edges[:-1], bins=bin_edges, weights=hist_values, histtype='stepfilled', label='Fully hadronic', alpha=0.5, linewidth=2)
+        total_background += hist_values
 
     xlabel = determine_xlabel(histogram_name)
     
     plt.xlabel(xlabel)
     plt.ylabel('Events')
-    plt.title(f'Histogram: {histogram_name} ({variation})')
+    plt.title(f'{histogram_name}'[:-2]+' '+f'({variation})')
     plt.legend()
     plt.grid(True)
     
@@ -274,8 +162,8 @@ def process_multiple_files(root_files):
         classification = classify_file(root_file)
         variation      = extract_variation(root_file)
         
-        print(f"File: {root_file}, Classification: {classification}")
-        print(f"File: {root_file}, Variation: {variation}")
+        print(f"File: {root_file}, Classification: {classification} \n")
+        print(f"File: {root_file}, Variation: {variation} \n")
 
         # dictionary entry for each variation if it doesn't exist
         if variation not in histograms_by_variation:
@@ -283,11 +171,9 @@ def process_multiple_files(root_files):
 
         with uproot.open(root_file) as file:
             histogram_names = [key for key in file.keys() if file[key].classname.startswith("TH")]
-            print(f"Histograms in {root_file}: {histogram_names}")
 
             for hist_name in histogram_names:
                 bin_edges, hist_values = read_histogram_data(root_file, hist_name)
-                print(f"Histogram {hist_name}: Bin edges: {bin_edges}, Values: {hist_values}")
 
                 if bin_edges is not None and hist_values is not None:
                     hist_data = (bin_edges, hist_values)
@@ -303,6 +189,7 @@ def process_multiple_files(root_files):
                                 bin_edges,
                                 histograms_by_variation[variation]['signal'][hist_name][1] + hist_values
                             )
+                            
                     elif classification == 'background':
                     
                         if hist_name not in histograms_by_variation[variation]['background']:
@@ -328,7 +215,7 @@ def process_multiple_files(root_files):
                     plot_stacked_histogram(hist_name, [signal_hist_data], [background_hist_data], variation)
                     print(f"Plotting for histogram: {hist_name}, Variation: {variation}")
 
-# Glob all .root files
+# glob all .root hist files
 root_files = glob.glob('/ceph/salshamaily/topEWK_FCCee/root_hists/*.root')
 
 # Process files
